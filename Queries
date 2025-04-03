@@ -1,0 +1,146 @@
+# Blinkit Analysis 	
+
+This project provides a comprehensive analysis of Blinkit's sales data using SQL, focusing on key performance indicators (KPIs) and granular requirements. The analysis is structured to derive actionable insights for business optimization.
+
+
+## Project Steps
+
+1.  Database Creation:
+ CREATE DATABASE Blinkitdb;
+
+
+2.  Data Exploration:
+    SELECT COUNT(*) FROM blinkit_data;
+    SELECT * FROM blinkit_data;
+    SHOW COLUMNS FROM Blinkit_data;
+
+
+3.  Data Cleaning:
+
+ALTER TABLE blinkit_data
+CHANGE COLUMN `ï»¿Item Fat Content` `Item Fat Content` VARCHAR(50);
+
+
+SELECT DISTINCT(`Item Fat Content`)
+FROM blinkit_data;
+
+
+UPDATE blinkit_data
+SET `Item Fat Content` = CASE
+    WHEN `Item Fat Content` = "LF" THEN "Low Fat"
+    WHEN `Item Fat Content` = "reg" THEN "regular"
+    ELSE `Item Fat Content`
+END;
+
+
+SELECT DISTINCT(`Item Fat Content`)
+FROM blinkit_data;
+	
+
+
+A. KPI’s
+
+1. TOTAL SALES: 
+SELECT CAST(SUM(`Total Sales`) / 1000000.0 AS DECIMAL(10,2)) AS Total_Sales_Million
+FROM blinkit_data;
+ 
+
+
+2. AVERAGE SALES
+SELECT CAST(AVG(`Total_Sales`) AS INT) AS Avg_Sales
+FROM blinkit_data;
+ 
+
+
+3. NO OF ITEMS
+SELECT COUNT(*) AS No_of_Orders
+FROM blinkit_data;
+ 
+
+
+4. AVG RATING
+SELECT CAST(AVG(`Rating`) AS DECIMAL(10,1)) AS Avg_Rating
+FROM blinkit_data;
+ 
+
+B. Total Sales by Fat Content:
+SELECT `Item Fat Content`, CAST(SUM(`Total Sales`) AS DECIMAL(10,2)) AS Total_Sales
+FROM blinkit_data
+GROUP BY `Item Fat Content`;
+ 
+
+
+C. Total Sales by Item Type
+SELECT `Item Type` , CAST(SUM(`Total Sales`) AS DECIMAL(10,2)) AS Total_Sales
+FROM blinkit_data
+GROUP BY `Item Type`
+ORDER BY `Total Sales`  DESC;
+ 
+
+
+D. Fat Content by Outlet for Total Sales
+SELECT `Outlet Location Type`, 
+       ISNULL([Low Fat], 0) AS Low_Fat, 
+       ISNULL([Regular], 0) AS Regular
+FROM 
+(
+    SELECT `Outlet Location Type`, `Item Fat Content`, 
+           CAST(SUM(`Total Sales`) AS DECIMAL(10,2)) AS Total_Sales
+    FROM blinkit_data
+    GROUP BY `Outlet Location Type`, `Item Fat Content`
+) AS SourceTable
+PIVOT 
+(
+    SUM(`Total Sales`)
+    FOR `Item Fat Content` IN ([Low Fat], [Regular])
+) AS PivotTable
+ORDER BY `Outlet Location Type`;
+
+ 
+
+
+
+E. Total Sales by Outlet Establishment
+SELECT `Outlet Establishment Year`, CAST(SUM(`Total Sales`) AS DECIMAL(10,2)) AS Total_Sales
+FROM blinkit_data
+GROUP BY  `Outlet Establishment Year`
+ORDER BY  `Outlet Establishment Year`
+ 
+
+
+
+F. Percentage of Sales by Outlet Size
+SELECT `Outlet Size`,
+       CAST(SUM(`Total Sales`) AS DECIMAL(10, 2)) AS Total_Sales,
+       CAST((SUM(`Total Sales`) * 100 / SUM(SUM(`Total Sales`)) OVER()) AS DECIMAL(10, 2)) AS Sales_Percentage
+FROM blinkit_data
+GROUP BY `Outlet Size`
+ORDER BY Total_Sales DESC;
+
+
+ 
+
+
+
+G. Sales by Outlet Location
+SELECT `Outlet Location Type`, CAST(SUM(`Total Sales`) AS DECIMAL(10,2)) AS Total_Sales
+FROM blinkit_data
+GROUP BY `Outlet Location Type`
+ORDER BY `Total Sales` DESC
+ 
+
+
+
+H. All Metrics by Outlet Type:
+SELECT `Outlet Type`,
+       CAST(SUM(`Total Sales`) AS DECIMAL(10, 2)) AS Total_Sales,
+       CAST(AVG(`Total Sales`) AS DECIMAL(10, 2)) AS Avg_Sales,
+       COUNT(*) AS No_Of_Items,
+       CAST(AVG(`Rating`) AS DECIMAL(10, 2)) AS Avg_Rating,
+
+
+       CAST(AVG(`Item Visibility`) AS DECIMAL(10, 2)) AS Item_Visibility
+FROM blinkit_data
+GROUP BY `Outlet Type`
+ORDER BY Total_Sales;
+ 
